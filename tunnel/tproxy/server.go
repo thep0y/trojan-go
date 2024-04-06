@@ -5,14 +5,16 @@ package tproxy
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net"
 	"sync"
 	"time"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/p4gefau1t/trojan-go/common"
 	"github.com/p4gefau1t/trojan-go/config"
-	"github.com/p4gefau1t/trojan-go/log"
 	"github.com/p4gefau1t/trojan-go/tunnel"
 )
 
@@ -41,17 +43,21 @@ func (s *Server) AcceptConn(tunnel.Tunnel) (tunnel.Conn, error) {
 		select {
 		case <-s.ctx.Done():
 		default:
-			log.Fatal(common.NewError("tproxy failed to accept connection").Base(err))
+			log.Fatal().Err(err).Msg("tproxy failed to accept connection")
 		}
 		return nil, common.NewError("tproxy failed to accept conn")
 	}
 	dst, err := getOriginalTCPDest(conn.(*net.TCPConn))
 	if err != nil {
-		return nil, common.NewError("tproxy failed to obtain original address of tcp socket").Base(err)
+		return nil, common.NewError("tproxy failed to obtain original address of tcp socket").
+			Base(err)
 	}
 	address, err := tunnel.NewAddressFromAddr("tcp", dst.String())
 	common.Must(err)
-	log.Info("tproxy connection from", conn.RemoteAddr().String(), "metadata", dst.String())
+	log.Info().
+		Stringer("addr", conn.RemoteAddr()).
+		Stringer("metadata", dst).
+		Msg("tproxy connection from")
 	return &Conn{
 		metadata: &tunnel.Metadata{
 			Address: address,
@@ -76,12 +82,12 @@ func (s *Server) packetDispatchLoop() {
 				select {
 				case <-s.ctx.Done():
 				default:
-					log.Fatal(common.NewError("tproxy failed to read from udp socket").Base(err))
+					log.Fatal().Err(err).Msg("tproxy failed to read from udp socket")
 				}
 				s.Close()
 				return
 			}
-			log.Debug("udp packet from", src, "metadata", dst, "size", n)
+			log.Debug().Msg(fmt.Sprint("udp packet from", src, "metadata", dst, "size", n))
 			packetQueue <- &tproxyPacketInfo{
 				src:     src,
 				dst:     dst,
@@ -95,7 +101,7 @@ func (s *Server) packetDispatchLoop() {
 		select {
 		case info = <-packetQueue:
 		case <-s.ctx.Done():
-			log.Debug("exiting")
+			log.Debug().Msg("exiting")
 			return
 		}
 
@@ -118,18 +124,23 @@ func (s *Server) packetDispatchLoop() {
 			s.mapping[info.src.String()] = conn
 			s.mappingLock.Unlock()
 
-			log.Info("new tproxy udp session from", info.src.String(), "metadata", info.dst.String())
+			log.Info().
+				Stringer("addr", info.src).
+				Stringer("metadata", info.dst).
+				Msg("new tproxy udp session from")
 			s.packetChan <- conn
 
 			go func(conn *PacketConn) {
 				defer conn.Close()
-				log.Debug("udp packet daemon for", conn.src.String())
+				log.Debug().Stringer("addr", conn.src).Msg("udp packet daemon for")
 				for {
 					select {
 					case info := <-conn.output:
 						if info.metadata.AddressType != tunnel.IPv4 &&
 							info.metadata.AddressType != tunnel.IPv6 {
-							log.Error("tproxy invalid response metadata address", info.metadata)
+							log.Error().
+								Stringer("metadata", info.metadata).
+								Msg("tproxy invalid response metadata address")
 							continue
 						}
 						back, err := DialUDP(
@@ -141,24 +152,30 @@ func (s *Server) packetDispatchLoop() {
 							conn.src.(*net.UDPAddr),
 						)
 						if err != nil {
-							log.Error(common.NewError("failed to dial tproxy udp").Base(err))
+							log.Error().Err(err).Msg("failed to dial tproxy udp")
 							return
 						}
 						n, err := back.Write(info.payload)
 						if err != nil {
-							log.Error(common.NewError("tproxy udp write error").Base(err))
+							log.Error().Err(err).Msg("tproxy udp write error")
 							return
 						}
-						log.Debug("recv packet, send back to", conn.src, "payload", len(info.payload), "sent", n)
+						log.Debug().
+							Stringer("src", conn.src).
+							Int("payload", len(info.payload)).
+							Int("sent", n).
+							Msg("recv packet, send back to")
 						back.Close()
 					case <-s.ctx.Done():
-						log.Debug("exiting")
+						log.Debug().Msg("exiting")
 						return
 					case <-time.After(s.timeout):
 						s.mappingLock.Lock()
 						delete(s.mapping, conn.src.String())
 						s.mappingLock.Unlock()
-						log.Debug("packet session ", conn.src.String(), "timeout")
+						log.Debug().
+							Stringer("src", conn.src).
+							Msg(("packet session timeout"))
 						return
 					}
 				}
@@ -174,10 +191,13 @@ func (s *Server) packetDispatchLoop() {
 
 		select {
 		case conn.input <- newInfo:
-			log.Debug("tproxy packet sent with metadata", newInfo.metadata, "size", len(info.payload))
+			log.Debug().
+				Stringer("metadata", newInfo.metadata).
+				Int("size", len(info.payload)).
+				Msg("tproxy packet sent with metadata")
 		default:
 			// if we got too many packets, simply drop it
-			log.Warn("tproxy udp relay queue full!")
+			log.Warn().Msg("tproxy udp relay queue full!")
 		}
 	}
 }
@@ -185,7 +205,7 @@ func (s *Server) packetDispatchLoop() {
 func (s *Server) AcceptPacket(tunnel.Tunnel) (tunnel.PacketConn, error) {
 	select {
 	case conn := <-s.packetChan:
-		log.Info("tproxy packet conn accepted")
+		log.Info().Msg("tproxy packet conn accepted")
 		return conn, nil
 	case <-s.ctx.Done():
 		return nil, io.EOF
@@ -229,7 +249,10 @@ func NewServer(ctx context.Context, _ tunnel.Server) (*Server, error) {
 		packetChan:  make(chan tunnel.PacketConn, 32),
 	}
 	go server.packetDispatchLoop()
-	log.Info("tproxy server listening on", tcpListener.Addr(), "(tcp)", udpListener.LocalAddr(), "(udp)")
-	log.Debug("tproxy server created")
+	log.Info().
+		Stringer("tcp-addr", tcpListener.Addr()).
+		Stringer("udp-addr", udpListener.LocalAddr()).
+		Msg("tproxy server listening on")
+	log.Debug().Msg("tproxy server created")
 	return server, nil
 }
