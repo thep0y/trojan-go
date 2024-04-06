@@ -6,8 +6,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	_ "github.com/p4gefau1t/trojan-go/component"
-	"github.com/p4gefau1t/trojan-go/option"
+	_ "github.com/thep0y/trojan-go/component"
+	"github.com/thep0y/trojan-go/option"
 )
 
 const (

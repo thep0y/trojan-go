@@ -1,16 +1,16 @@
-# Trojan-Go [![Go Report Card](https://goreportcard.com/badge/github.com/p4gefau1t/trojan-go)](https://goreportcard.com/report/github.com/p4gefau1t/trojan-go) [![Downloads](https://img.shields.io/github/downloads/p4gefau1t/trojan-go/total?label=downloads&logo=github&style=flat-square)](https://img.shields.io/github/downloads/p4gefau1t/trojan-go/total?label=downloads&logo=github&style=flat-square)
+# Trojan-Go [![Go Report Card](https://goreportcard.com/badge/github.com/thep0y/trojan-go)](https://goreportcard.com/report/github.com/thep0y/trojan-go) [![Downloads](https://img.shields.io/github/downloads/thep0y/trojan-go/total?label=downloads&logo=github&style=flat-square)](https://img.shields.io/github/downloads/thep0y/trojan-go/total?label=downloads&logo=github&style=flat-square)
 
 使用 Go 实现的完整 Trojan 代理，兼容原版 Trojan 协议及配置文件格式。安全、高效、轻巧、易用。
 
 Trojan-Go 支持[多路复用](#多路复用)提升并发性能；使用[路由模块](#路由模块)实现国内外分流；支持 [CDN 流量中转](#Websocket)(基于 WebSocket over TLS)；支持使用 AEAD 对 Trojan 流量进行[二次加密](#aead-加密)(基于 Shadowsocks AEAD)；支持可插拔的[传输层插件](#传输层插件)，允许替换 TLS，使用其他加密隧道传输 Trojan 协议流量。
 
-预编译二进制可执行文件可在 [Release 页面](https://github.com/p4gefau1t/trojan-go/releases)下载。解压后即可直接运行，无其他组件依赖。
+预编译二进制可执行文件可在 [Release 页面](https://github.com/thep0y/trojan-go/releases)下载。解压后即可直接运行，无其他组件依赖。
 
 如遇到配置和使用问题、发现 bug，或是有更好的想法，欢迎加入 [Telegram 交流反馈群](https://t.me/trojan_go_chat)。
 
 ## 简介
 
-**完整介绍和配置教程，参见 [Trojan-Go 文档](https://p4gefau1t.github.io/trojan-go)。**
+**完整介绍和配置教程，参见 [Trojan-Go 文档](https://thep0y.github.io/trojan-go)。**
 
 Trojan-Go 兼容原版 Trojan 的绝大多数功能，包括但不限于：
 
@@ -41,7 +41,7 @@ Trojan-Go 兼容原版 Trojan 的绝大多数功能，包括但不限于：
 Trojan-Go 服务端兼容所有原 Trojan 客户端，如 Igniter、ShadowRocket 等。以下是支持 Trojan-Go 扩展特性（Websocket / Mux 等）的客户端：
 
 - [Qv2ray](https://github.com/Qv2ray/Qv2ray)：跨平台客户端，支持 Windows / macOS / Linux，使用 Trojan-Go 核心，支持所有 Trojan-Go 扩展特性。
-- [Igniter-Go](https://github.com/p4gefau1t/trojan-go-android)：Android 客户端，Fork 自 Igniter，将 Igniter 核心替换为 Trojan-Go 并做了一定修改，支持所有 Trojan-Go 扩展特性。
+- [Igniter-Go](https://github.com/thep0y/trojan-go-android)：Android 客户端，Fork 自 Igniter，将 Igniter 核心替换为 Trojan-Go 并做了一定修改，支持所有 Trojan-Go 扩展特性。
 
 ## 使用方法
 
@@ -79,7 +79,7 @@ Trojan-Go 服务端兼容所有原 Trojan 客户端，如 Igniter、ShadowRocket
        -d \
        -v /etc/trojan-go/:/etc/trojan-go \
        --network host \
-       p4gefau1t/trojan-go
+       thep0y/trojan-go
    ```
 
    或者
@@ -90,7 +90,7 @@ Trojan-Go 服务端兼容所有原 Trojan 客户端，如 Igniter、ShadowRocket
        -d \
        -v /path/to/host/config:/path/in/container \
        --network host \
-       p4gefau1t/trojan-go \
+       thep0y/trojan-go \
        /path/in/container/config.json
    ```
 
@@ -108,11 +108,11 @@ Trojan-Go 服务端兼容所有原 Trojan 客户端，如 Igniter、ShadowRocket
 CGO_ENABLED=0 GOOS=linux GOARCH=mips go build -tags "client" -trimpath -ldflags "-s -w -buildid="
 ```
 
-完整的 tag 说明参见 [Trojan-Go 文档](https://p4gefau1t.github.io/trojan-go)。
+完整的 tag 说明参见 [Trojan-Go 文档](https://thep0y.github.io/trojan-go)。
 
 ### 易用
 
-配置文件格式与原版 Trojan 兼容，但做了大幅简化，未指定的字段会被赋予默认值，由此可以更方便地部署服务端和客户端。以下是一个简单例子，完整的配置文件可以参见[这里](https://p4gefau1t.github.io/trojan-go)。
+配置文件格式与原版 Trojan 兼容，但做了大幅简化，未指定的字段会被赋予默认值，由此可以更方便地部署服务端和客户端。以下是一个简单例子，完整的配置文件可以参见[这里](https://thep0y.github.io/trojan-go)。
 
 服务端配置文件 `server.json`：
 
@@ -173,7 +173,7 @@ Trojan-Go 支持使用 TLS + Websocket 承载 Trojan 协议，使得利用 CDN �
 }
 ```
 
-完整的选项说明参见 [Trojan-Go 文档](https://p4gefau1t.github.io/trojan-go)。
+完整的选项说明参见 [Trojan-Go 文档](https://thep0y.github.io/trojan-go)。
 
 可以省略 `hostname`, 但服务端和客户端的 `path` 必须一致。服务端开启 Websocket 支持后，可以同时支持 Websocket 和一般 Trojan 流量。未配置 Websocket 选项的客户端依然可以正常使用。
 
@@ -193,7 +193,7 @@ Trojan-Go 支持使用 TLS + Websocket 承载 Trojan 协议，使得利用 CDN �
 }
 ```
 
-只需开启客户端 mux 配置即可，服务端会自动检测是否启用多路复用并提供支持。完整的选项说明参见 [Trojan-Go 文档](https://p4gefau1t.github.io/trojan-go)。
+只需开启客户端 mux 配置即可，服务端会自动检测是否启用多路复用并提供支持。完整的选项说明参见 [Trojan-Go 文档](https://thep0y.github.io/trojan-go)。
 
 ### 路由模块
 
@@ -225,7 +225,7 @@ Trojan-Go 客户端内建一个简单实用的路由模块，以方便实现国�
 }
 ```
 
-完整的选项说明参见 [Trojan-Go 文档](https://p4gefau1t.github.io/trojan-go)。
+完整的选项说明参见 [Trojan-Go 文档](https://thep0y.github.io/trojan-go)。
 
 ### AEAD 加密
 
@@ -268,7 +268,7 @@ Trojan-Go 支持可插拔的传输层插件，并支持 Shadowsocks [SIP003](htt
 }
 ```
 
-完整的选项说明参见 [Trojan-Go 文档](https://p4gefau1t.github.io/trojan-go)。
+完整的选项说明参见 [Trojan-Go 文档](https://thep0y.github.io/trojan-go)。
 
 ## 构建
 
@@ -277,7 +277,7 @@ Trojan-Go 支持可插拔的传输层插件，并支持 Shadowsocks [SIP003](htt
 使用 `make` 进行编译：
 
 ```shell
-git clone https://github.com/p4gefau1t/trojan-go.git
+git clone https://github.com/thep0y/trojan-go.git
 cd trojan-go
 make
 make install #安装systemd服务等，可选
@@ -321,4 +321,4 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -tags "full" -ldflags "-s -w"
 
 ## Stargazers over time
 
-[![Stargazers over time](https://starchart.cc/p4gefau1t/trojan-go.svg)](https://starchart.cc/p4gefau1t/trojan-go)
+[![Stargazers over time](https://starchart.cc/thep0y/trojan-go.svg)](https://starchart.cc/thep0y/trojan-go)

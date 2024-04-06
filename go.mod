@@ -1,4 +1,4 @@
-module github.com/p4gefau1t/trojan-go
+module github.com/thep0y/trojan-go
 
 go 1.21.5
 

@@ -12,12 +12,12 @@ import (
 	"github.com/rs/zerolog/log"
 	v2router "github.com/v2fly/v2ray-core/v4/app/router"
 
-	"github.com/p4gefau1t/trojan-go/common"
-	"github.com/p4gefau1t/trojan-go/common/geodata"
-	"github.com/p4gefau1t/trojan-go/config"
-	"github.com/p4gefau1t/trojan-go/tunnel"
-	"github.com/p4gefau1t/trojan-go/tunnel/freedom"
-	"github.com/p4gefau1t/trojan-go/tunnel/transport"
+	"github.com/thep0y/trojan-go/common"
+	"github.com/thep0y/trojan-go/common/geodata"
+	"github.com/thep0y/trojan-go/config"
+	"github.com/thep0y/trojan-go/tunnel"
+	"github.com/thep0y/trojan-go/tunnel/freedom"
+	"github.com/thep0y/trojan-go/tunnel/transport"
 )
 
 const (

@@ -4,6 +4,6 @@
 package build
 
 import (
-	_ "github.com/p4gefau1t/trojan-go/api/control"
-	_ "github.com/p4gefau1t/trojan-go/api/service"
+	_ "github.com/thep0y/trojan-go/api/control"
+	_ "github.com/thep0y/trojan-go/api/service"
 )

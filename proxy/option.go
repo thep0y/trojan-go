@@ -11,9 +11,9 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/p4gefau1t/trojan-go/common"
-	"github.com/p4gefau1t/trojan-go/constant"
-	"github.com/p4gefau1t/trojan-go/option"
+	"github.com/thep0y/trojan-go/common"
+	"github.com/thep0y/trojan-go/constant"
+	"github.com/thep0y/trojan-go/option"
 )
 
 type Option struct {

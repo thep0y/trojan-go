@@ -10,9 +10,9 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/xtaci/smux"
 
-	"github.com/p4gefau1t/trojan-go/common"
-	"github.com/p4gefau1t/trojan-go/config"
-	"github.com/p4gefau1t/trojan-go/tunnel"
+	"github.com/thep0y/trojan-go/common"
+	"github.com/thep0y/trojan-go/config"
+	"github.com/thep0y/trojan-go/tunnel"
 )
 
 type muxID uint32

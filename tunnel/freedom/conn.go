@@ -7,8 +7,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/txthinking/socks5"
 
-	"github.com/p4gefau1t/trojan-go/common"
-	"github.com/p4gefau1t/trojan-go/tunnel"
+	"github.com/thep0y/trojan-go/common"
+	"github.com/thep0y/trojan-go/tunnel"
 )
 
 const MaxPacketSize = 1024 * 8

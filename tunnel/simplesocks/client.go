@@ -5,9 +5,9 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/p4gefau1t/trojan-go/common"
-	"github.com/p4gefau1t/trojan-go/tunnel"
-	"github.com/p4gefau1t/trojan-go/tunnel/trojan"
+	"github.com/thep0y/trojan-go/common"
+	"github.com/thep0y/trojan-go/tunnel"
+	"github.com/thep0y/trojan-go/tunnel/trojan"
 )
 
 const (

@@ -7,12 +7,12 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/p4gefau1t/trojan-go/common"
-	"github.com/p4gefau1t/trojan-go/config"
-	"github.com/p4gefau1t/trojan-go/tunnel"
-	"github.com/p4gefau1t/trojan-go/tunnel/freedom"
-	"github.com/p4gefau1t/trojan-go/tunnel/http"
-	"github.com/p4gefau1t/trojan-go/tunnel/socks"
+	"github.com/thep0y/trojan-go/common"
+	"github.com/thep0y/trojan-go/config"
+	"github.com/thep0y/trojan-go/tunnel"
+	"github.com/thep0y/trojan-go/tunnel/freedom"
+	"github.com/thep0y/trojan-go/tunnel/http"
+	"github.com/thep0y/trojan-go/tunnel/socks"
 )
 
 type Server struct {

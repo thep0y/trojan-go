@@ -12,11 +12,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/p4gefau1t/trojan-go/api"
-	"github.com/p4gefau1t/trojan-go/common"
-	"github.com/p4gefau1t/trojan-go/config"
-	"github.com/p4gefau1t/trojan-go/statistic"
-	"github.com/p4gefau1t/trojan-go/tunnel/trojan"
+	"github.com/thep0y/trojan-go/api"
+	"github.com/thep0y/trojan-go/common"
+	"github.com/thep0y/trojan-go/config"
+	"github.com/thep0y/trojan-go/statistic"
+	"github.com/thep0y/trojan-go/tunnel/trojan"
 )
 
 type ServerAPI struct {

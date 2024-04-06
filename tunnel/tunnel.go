@@ -5,7 +5,7 @@ import (
 	"io"
 	"net"
 
-	"github.com/p4gefau1t/trojan-go/common"
+	"github.com/thep0y/trojan-go/common"
 )
 
 // Conn is the TCP connection in the tunnel

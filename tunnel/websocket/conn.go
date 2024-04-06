@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/net/websocket"
 
-	"github.com/p4gefau1t/trojan-go/tunnel"
+	"github.com/thep0y/trojan-go/tunnel"
 )
 
 type OutboundConn struct {

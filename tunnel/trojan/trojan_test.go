@@ -8,13 +8,13 @@ import (
 	"net"
 	"testing"
 
-	"github.com/p4gefau1t/trojan-go/common"
-	"github.com/p4gefau1t/trojan-go/config"
-	"github.com/p4gefau1t/trojan-go/statistic/memory"
-	"github.com/p4gefau1t/trojan-go/test/util"
-	"github.com/p4gefau1t/trojan-go/tunnel"
-	"github.com/p4gefau1t/trojan-go/tunnel/freedom"
-	"github.com/p4gefau1t/trojan-go/tunnel/transport"
+	"github.com/thep0y/trojan-go/common"
+	"github.com/thep0y/trojan-go/config"
+	"github.com/thep0y/trojan-go/statistic/memory"
+	"github.com/thep0y/trojan-go/test/util"
+	"github.com/thep0y/trojan-go/tunnel"
+	"github.com/thep0y/trojan-go/tunnel/freedom"
+	"github.com/thep0y/trojan-go/tunnel/transport"
 )
 
 func TestTrojan(t *testing.T) {

@@ -3,7 +3,7 @@ package proxy
 import (
 	"github.com/rs/zerolog"
 
-	"github.com/p4gefau1t/trojan-go/config"
+	"github.com/thep0y/trojan-go/config"
 )
 
 type Config struct {

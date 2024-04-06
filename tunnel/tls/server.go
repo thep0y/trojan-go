@@ -19,13 +19,13 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/p4gefau1t/trojan-go/common"
-	"github.com/p4gefau1t/trojan-go/config"
-	"github.com/p4gefau1t/trojan-go/redirector"
-	"github.com/p4gefau1t/trojan-go/tunnel"
-	"github.com/p4gefau1t/trojan-go/tunnel/tls/fingerprint"
-	"github.com/p4gefau1t/trojan-go/tunnel/transport"
-	"github.com/p4gefau1t/trojan-go/tunnel/websocket"
+	"github.com/thep0y/trojan-go/common"
+	"github.com/thep0y/trojan-go/config"
+	"github.com/thep0y/trojan-go/redirector"
+	"github.com/thep0y/trojan-go/tunnel"
+	"github.com/thep0y/trojan-go/tunnel/tls/fingerprint"
+	"github.com/thep0y/trojan-go/tunnel/transport"
+	"github.com/thep0y/trojan-go/tunnel/websocket"
 )
 
 // Server is a tls server

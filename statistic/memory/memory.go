@@ -9,9 +9,9 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/time/rate"
 
-	"github.com/p4gefau1t/trojan-go/common"
-	"github.com/p4gefau1t/trojan-go/config"
-	"github.com/p4gefau1t/trojan-go/statistic"
+	"github.com/thep0y/trojan-go/common"
+	"github.com/thep0y/trojan-go/config"
+	"github.com/thep0y/trojan-go/statistic"
 )
 
 const Name = "MEMORY"

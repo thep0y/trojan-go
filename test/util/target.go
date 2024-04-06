@@ -13,7 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/net/websocket"
 
-	"github.com/p4gefau1t/trojan-go/common"
+	"github.com/thep0y/trojan-go/common"
 )
 
 var (

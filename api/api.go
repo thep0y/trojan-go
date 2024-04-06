@@ -5,7 +5,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/p4gefau1t/trojan-go/statistic"
+	"github.com/thep0y/trojan-go/statistic"
 )
 
 type Handler func(ctx context.Context, auth statistic.Authenticator) error

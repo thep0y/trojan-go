@@ -9,9 +9,9 @@ import (
 
 	"github.com/txthinking/socks5"
 
-	"github.com/p4gefau1t/trojan-go/common"
-	"github.com/p4gefau1t/trojan-go/test/util"
-	"github.com/p4gefau1t/trojan-go/tunnel"
+	"github.com/thep0y/trojan-go/common"
+	"github.com/thep0y/trojan-go/test/util"
+	"github.com/thep0y/trojan-go/tunnel"
 )
 
 func TestConn(t *testing.T) {
@@ -75,8 +75,8 @@ func TestSocks(t *testing.T) {
 	common.Must(err)
 	s, _ := socks5.NewClassicServer(socksAddr.String(), "127.0.0.1", "", "", 0, 0)
 	s.Handle = &socks5.DefaultHandle{}
-	go s.RunTCPServer()
-	go s.RunUDPServer()
+
+	go s.ListenAndServe(s.Handle)
 
 	time.Sleep(time.Second * 2)
 	conn, err := client.DialConn(target, nil)

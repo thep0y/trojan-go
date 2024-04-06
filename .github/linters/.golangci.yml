@@ -38,6 +38,6 @@ linters:
 
 linters-settings:
   gci:
-    local-prefixes: github.com/p4gefau1t/trojan-go
+    local-prefixes: github.com/thep0y/trojan-go
   goimports:
-    local-prefixes: github.com/p4gefau1t/trojan-go
+    local-prefixes: github.com/thep0y/trojan-go
