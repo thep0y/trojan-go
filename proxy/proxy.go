@@ -5,12 +5,13 @@ import (
 	"io"
 	"math/rand"
 	"net"
-	"os"
 	"strings"
+
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	"github.com/p4gefau1t/trojan-go/common"
 	"github.com/p4gefau1t/trojan-go/config"
-	"github.com/p4gefau1t/trojan-go/log"
 	"github.com/p4gefau1t/trojan-go/tunnel"
 )
 
@@ -52,18 +53,18 @@ func (p *Proxy) relayConnLoop() {
 				if err != nil {
 					select {
 					case <-p.ctx.Done():
-						log.Debug("exiting")
+						log.Debug().Msg("exiting")
 						return
 					default:
 					}
-					log.Error(common.NewError("failed to accept connection").Base(err))
+					log.Error().Err(err).Msg("failed to accept connection")
 					continue
 				}
 				go func(inbound tunnel.Conn) {
 					defer inbound.Close()
 					outbound, err := p.sink.DialConn(inbound.Metadata().Address, nil)
 					if err != nil {
-						log.Error(common.NewError("proxy failed to dial connection").Base(err))
+						log.Error().Err(err).Msg("proxy failed to dial connection")
 						return
 					}
 					defer outbound.Close()
@@ -77,13 +78,13 @@ func (p *Proxy) relayConnLoop() {
 					select {
 					case err = <-errChan:
 						if err != nil {
-							log.Error(err)
+							log.Error().Err(err).Send()
 						}
 					case <-p.ctx.Done():
-						log.Debug("shutting down conn relay")
+						log.Debug().Msg("shutting down conn relay")
 						return
 					}
-					log.Debug("conn relay ends")
+					log.Debug().Msg("conn relay ends")
 				}(inbound)
 			}
 		}(source)
@@ -98,18 +99,18 @@ func (p *Proxy) relayPacketLoop() {
 				if err != nil {
 					select {
 					case <-p.ctx.Done():
-						log.Debug("exiting")
+						log.Debug().Msg("exiting")
 						return
 					default:
 					}
-					log.Error(common.NewError("failed to accept packet").Base(err))
+					log.Error().Err(err).Msg("failed to accept packet")
 					continue
 				}
 				go func(inbound tunnel.PacketConn) {
 					defer inbound.Close()
 					outbound, err := p.sink.DialPacket(nil)
 					if err != nil {
-						log.Error(common.NewError("proxy failed to dial packet").Base(err))
+						log.Error().Err(err).Msg("proxy failed to dial packet")
 						return
 					}
 					defer outbound.Close()
@@ -138,19 +139,24 @@ func (p *Proxy) relayPacketLoop() {
 					select {
 					case err = <-errChan:
 						if err != nil {
-							log.Error(err)
+							log.Error().Err(err).Send()
 						}
 					case <-p.ctx.Done():
-						log.Debug("shutting down packet relay")
+						log.Debug().Msg("shutting down packet relay")
 					}
-					log.Debug("packet relay ends")
+					log.Debug().Msg("packet relay ends")
 				}(inbound)
 			}
 		}(source)
 	}
 }
 
-func NewProxy(ctx context.Context, cancel context.CancelFunc, sources []tunnel.Server, sink tunnel.Client) *Proxy {
+func NewProxy(
+	ctx context.Context,
+	cancel context.CancelFunc,
+	sources []tunnel.Server,
+	sink tunnel.Client,
+) *Proxy {
 	return &Proxy{
 		sources: sources,
 		sink:    sink,
@@ -187,13 +193,13 @@ func NewProxyFromConfigData(data []byte, isJSON bool) (*Proxy, error) {
 	if !ok {
 		return nil, common.NewError("unknown proxy type: " + cfg.RunType)
 	}
-	log.SetLogLevel(log.LogLevel(cfg.LogLevel))
-	if cfg.LogFile != "" {
-		file, err := os.OpenFile(cfg.LogFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
-		if err != nil {
-			return nil, common.NewError("failed to open log file").Base(err)
-		}
-		log.SetOutput(file)
-	}
+	zerolog.SetGlobalLevel(zerolog.Level(cfg.LogLevel))
+	// if cfg.LogFile != "" {
+	// 	file, err := os.OpenFile(cfg.LogFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
+	// 	if err != nil {
+	// 		return nil, common.NewError("failed to open log file").Base(err)
+	// 	}
+	// log.SetOutput(file)
+	// }
 	return create(ctx)
 }

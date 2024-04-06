@@ -4,14 +4,15 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"runtime"
 	"strings"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/p4gefau1t/trojan-go/common"
 	"github.com/p4gefau1t/trojan-go/constant"
-	"github.com/p4gefau1t/trojan-go/log"
 	"github.com/p4gefau1t/trojan-go/option"
 )
 
@@ -31,10 +32,12 @@ func detectAndReadConfig(file string) ([]byte, bool, error) {
 	case strings.HasSuffix(file, ".yaml"), strings.HasSuffix(file, ".yml"):
 		isJSON = false
 	default:
-		log.Fatalf("unsupported config format: %s. use .yaml or .json instead.", file)
+		log.Fatal().
+			Str("file", file).
+			Msg("unsupported config format, use .yaml or .json instead")
 	}
 
-	data, err := ioutil.ReadFile(file)
+	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, false, err
 	}
@@ -54,12 +57,12 @@ func (o *Option) Handle() error {
 
 	switch *o.path {
 	case "":
-		log.Warn("no specified config file, use default path to detect config file")
+		log.Warn().Msg("no specified config file, use default path to detect config file")
 		for _, file := range defaultConfigPath {
-			log.Warn("try to load config from default path:", file)
+			log.Warn().Str("file-path", file).Msg("try to load config from default path")
 			data, isJSON, err = detectAndReadConfig(file)
 			if err != nil {
-				log.Warn(err)
+				log.Warn().Err(err).Send()
 				continue
 			}
 			break
@@ -67,23 +70,25 @@ func (o *Option) Handle() error {
 	default:
 		data, isJSON, err = detectAndReadConfig(*o.path)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal().Err(err).Send()
 		}
 	}
 
 	if data != nil {
-		log.Info("trojan-go", constant.Version, "initializing")
+		log.Info().
+			Str("version", constant.Version).
+			Msg("trojan-go is initializing")
 		proxy, err := NewProxyFromConfigData(data, isJSON)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal().Err(err).Send()
 		}
 		err = proxy.Run()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal().Err(err).Send()
 		}
 	}
 
-	log.Fatal("no valid config")
+	log.Fatal().Msg("no valid config")
 	return nil
 }
 
@@ -96,7 +101,11 @@ func init() {
 		path: flag.String("config", "", "Trojan-Go config filename (.yaml/.yml/.json)"),
 	})
 	option.RegisterHandler(&StdinOption{
-		format:       flag.String("stdin-format", "disabled", "Read from standard input (yaml/json)"),
+		format: flag.String(
+			"stdin-format",
+			"disabled",
+			"Read from standard input (yaml/json)",
+		),
 		suppressHint: flag.Bool("stdin-suppress-hint", false, "Suppress hint text"),
 	})
 }
@@ -125,18 +134,18 @@ func (o *StdinOption) Handle() error {
 		}
 	}
 
-	data, e := ioutil.ReadAll(bufio.NewReader(os.Stdin))
+	data, e := io.ReadAll(bufio.NewReader(os.Stdin))
 	if e != nil {
-		log.Fatalf("Failed to read from stdin: %s", e.Error())
+		log.Fatal().Err(e).Msg("Failed to read from stdin")
 	}
 
 	proxy, err := NewProxyFromConfigData(data, isJSON)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Send()
 	}
 	err = proxy.Run()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Send()
 	}
 
 	return nil

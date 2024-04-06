@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 
 	"github.com/p4gefau1t/trojan-go/api/service"
 	"github.com/p4gefau1t/trojan-go/common"
-	"github.com/p4gefau1t/trojan-go/log"
 	"github.com/p4gefau1t/trojan-go/option"
 )
 
@@ -139,7 +139,7 @@ func (o *apiController) Handle() error {
 	}
 	conn, err := grpc.Dial(*o.address, grpc.WithInsecure())
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err).Send()
 		return nil
 	}
 	defer conn.Close()
@@ -148,20 +148,20 @@ func (o *apiController) Handle() error {
 	case "list":
 		err := o.listUsers(apiClient)
 		if err != nil {
-			log.Error(err)
+			log.Error().Err(err).Send()
 		}
 	case "get":
 		err := o.getUsers(apiClient)
 		if err != nil {
-			log.Error(err)
+			log.Error().Err(err).Send()
 		}
 	case "set":
 		err := o.setUsers(apiClient)
 		if err != nil {
-			log.Error(err)
+			log.Error().Err(err).Send()
 		}
 	default:
-		log.Error("unknown command " + *o.cmd)
+		log.Error().Msg("unknown command " + *o.cmd)
 	}
 	return nil
 }
@@ -172,16 +172,36 @@ func (o *apiController) Priority() int {
 
 func init() {
 	option.RegisterHandler(&apiController{
-		cmd:                flag.String("api", "", "Connect to a Trojan-Go API service. \"-api add/get/list\""),
-		address:            flag.String("api-addr", "127.0.0.1:10000", "Address of Trojan-Go API service"),
-		password:           flag.String("target-password", "", "Password of the target user"),
-		hash:               flag.String("target-hash", "", "Hash of the target user"),
-		add:                flag.Bool("add-profile", false, "Add a new profile with API"),
-		delete:             flag.Bool("delete-profile", false, "Delete an existing profile with API"),
-		modify:             flag.Bool("modify-profile", false, "Modify an existing profile with API"),
-		uploadSpeedLimit:   flag.Int("upload-speed-limit", 0, "Limit the upload speed with API"),
-		downloadSpeedLimit: flag.Int("download-speed-limit", 0, "Limit the download speed with API"),
-		ipLimit:            flag.Int("ip-limit", 0, "Limit the number of IP with API"),
-		ctx:                context.Background(),
+		cmd: flag.String(
+			"api",
+			"",
+			"Connect to a Trojan-Go API service. \"-api add/get/list\"",
+		),
+		address: flag.String(
+			"api-addr",
+			"127.0.0.1:10000",
+			"Address of Trojan-Go API service",
+		),
+		password: flag.String("target-password", "", "Password of the target user"),
+		hash:     flag.String("target-hash", "", "Hash of the target user"),
+		add:      flag.Bool("add-profile", false, "Add a new profile with API"),
+		delete: flag.Bool(
+			"delete-profile",
+			false,
+			"Delete an existing profile with API",
+		),
+		modify: flag.Bool(
+			"modify-profile",
+			false,
+			"Modify an existing profile with API",
+		),
+		uploadSpeedLimit: flag.Int("upload-speed-limit", 0, "Limit the upload speed with API"),
+		downloadSpeedLimit: flag.Int(
+			"download-speed-limit",
+			0,
+			"Limit the download speed with API",
+		),
+		ipLimit: flag.Int("ip-limit", 0, "Limit the number of IP with API"),
+		ctx:     context.Background(),
 	})
 }

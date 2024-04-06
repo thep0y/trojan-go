@@ -6,8 +6,9 @@ import (
 	"net"
 	"strconv"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/p4gefau1t/trojan-go/common"
-	"github.com/p4gefau1t/trojan-go/log"
 	"github.com/p4gefau1t/trojan-go/option"
 	"github.com/p4gefau1t/trojan-go/proxy"
 )
@@ -56,29 +57,29 @@ func (o *easy) Handle() error {
 		return common.NewError("empty")
 	}
 	if *o.password == "" {
-		log.Fatal("empty password is not allowed")
+		log.Fatal().Msg("empty password is not allowed")
 	}
-	log.Info("easy mode enabled, trojan-go will NOT use the config file")
+	log.Info().Msg("easy mode enabled, trojan-go will NOT use the config file")
 	if *o.client {
 		if *o.local == "" {
-			log.Warn("client local addr is unspecified, using 127.0.0.1:1080")
+			log.Warn().Msg("client local addr is unspecified, using 127.0.0.1:1080")
 			*o.local = "127.0.0.1:1080"
 		}
 		localHost, localPortStr, err := net.SplitHostPort(*o.local)
 		if err != nil {
-			log.Fatal(common.NewError("invalid local addr format:" + *o.local).Base(err))
+			log.Fatal().Err(err).Msg("invalid local addr format:" + *o.local)
 		}
 		remoteHost, remotePortStr, err := net.SplitHostPort(*o.remote)
 		if err != nil {
-			log.Fatal(common.NewError("invalid remote addr format:" + *o.remote).Base(err))
+			log.Fatal().Err(err).Msg("invalid remote addr format:" + *o.remote)
 		}
 		localPort, err := strconv.Atoi(localPortStr)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal().Err(err).Send()
 		}
 		remotePort, err := strconv.Atoi(remotePortStr)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal().Err(err).Send()
 		}
 		clientConfig := ClientConfig{
 			RunType:    "client",
@@ -92,39 +93,39 @@ func (o *easy) Handle() error {
 		}
 		clientConfigJSON, err := json.Marshal(&clientConfig)
 		common.Must(err)
-		log.Info("generated config:")
-		log.Info(string(clientConfigJSON))
+		log.Info().Msg("generated config:")
+		log.Info().Msg(string(clientConfigJSON))
 		proxy, err := proxy.NewProxyFromConfigData(clientConfigJSON, true)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal().Err(err).Send()
 		}
 		if err := proxy.Run(); err != nil {
-			log.Fatal(err)
+			log.Fatal().Err(err).Send()
 		}
 	} else if *o.server {
 		if *o.remote == "" {
-			log.Warn("server remote addr is unspecified, using 127.0.0.1:80")
+			log.Warn().Msg("server remote addr is unspecified, using 127.0.0.1:80")
 			*o.remote = "127.0.0.1:80"
 		}
 		if *o.local == "" {
-			log.Warn("server local addr is unspecified, using 0.0.0.0:443")
+			log.Warn().Msg("server local addr is unspecified, using 0.0.0.0:443")
 			*o.local = "0.0.0.0:443"
 		}
 		localHost, localPortStr, err := net.SplitHostPort(*o.local)
 		if err != nil {
-			log.Fatal(common.NewError("invalid local addr format:" + *o.local).Base(err))
+			log.Fatal().Err(err).Msg("invalid local addr format:" + *o.local)
 		}
 		remoteHost, remotePortStr, err := net.SplitHostPort(*o.remote)
 		if err != nil {
-			log.Fatal(common.NewError("invalid remote addr format:" + *o.remote).Base(err))
+			log.Fatal().Err(err).Msg("invalid remote addr format:" + *o.remote)
 		}
 		localPort, err := strconv.Atoi(localPortStr)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal().Err(err).Send()
 		}
 		remotePort, err := strconv.Atoi(remotePortStr)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal().Err(err).Send()
 		}
 		serverConfig := ServerConfig{
 			RunType:    "server",
@@ -142,14 +143,13 @@ func (o *easy) Handle() error {
 		}
 		serverConfigJSON, err := json.Marshal(&serverConfig)
 		common.Must(err)
-		log.Info("generated json config:")
-		log.Info(string(serverConfigJSON))
+		log.Info().Str("json", string(serverConfigJSON)).Msg("generated json config:")
 		proxy, err := proxy.NewProxyFromConfigData(serverConfigJSON, true)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal().Err(err).Send()
 		}
 		if err := proxy.Run(); err != nil {
-			log.Fatal(err)
+			log.Fatal().Err(err).Send()
 		}
 	}
 	return nil

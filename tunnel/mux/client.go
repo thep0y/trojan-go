@@ -7,11 +7,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/xtaci/smux"
 
 	"github.com/p4gefau1t/trojan-go/common"
 	"github.com/p4gefau1t/trojan-go/config"
-	"github.com/p4gefau1t/trojan-go/log"
 	"github.com/p4gefau1t/trojan-go/tunnel"
 )
 
@@ -45,7 +45,7 @@ func (c *Client) Close() error {
 	defer c.clientPoolLock.Unlock()
 	for id, info := range c.clientPool {
 		info.client.Close()
-		log.Debug("mux client", id, "closed")
+		log.Debug().Interface("id", id).Msg("mux client closed")
 	}
 	return nil
 }
@@ -54,11 +54,13 @@ func (c *Client) cleanLoop() {
 	var checkDuration time.Duration
 	if c.timeout <= 0 {
 		checkDuration = time.Second * 10
-		log.Warn("negative mux timeout")
+		log.Warn().Msg("negative mux timeout")
 	} else {
 		checkDuration = c.timeout / 4
 	}
-	log.Debug("check duration:", checkDuration.Seconds(), "s")
+	log.Debug().
+		Dur("duration", checkDuration).
+		Msg("check duration")
 	for {
 		select {
 		case <-time.After(checkDuration):
@@ -68,27 +70,28 @@ func (c *Client) cleanLoop() {
 					info.client.Close()
 					info.underlayConn.Close()
 					delete(c.clientPool, id)
-					log.Info("mux client", id, "is dead")
+					log.Info().Interface("id", id).Msg("mux client is dead")
 				} else if info.client.NumStreams() == 0 && time.Since(info.lastActiveTime) > c.timeout {
 					info.client.Close()
 					info.underlayConn.Close()
 					delete(c.clientPool, id)
-					log.Info("mux client", id, "is closed due to inactivity")
+					log.Info().Interface("id", id).Msg("mux client is closed due to inactivity")
 				}
 			}
-			log.Debug("current mux clients: ", len(c.clientPool))
+			log.Debug().Int("count", len(c.clientPool)).Msg("current mux clients")
 			for id, info := range c.clientPool {
-				log.Debug(fmt.Sprintf("  - %x: %d/%d", id, info.client.NumStreams(), c.concurrency))
+				log.Debug().
+					Msg(fmt.Sprintf("  - %x: %d/%d", id, info.client.NumStreams(), c.concurrency))
 			}
 			c.clientPoolLock.Unlock()
 		case <-c.ctx.Done():
-			log.Debug("shutting down mux cleaner..")
+			log.Debug().Msg("shutting down mux cleaner..")
 			c.clientPoolLock.Lock()
 			for id, info := range c.clientPool {
 				info.client.Close()
 				info.underlayConn.Close()
 				delete(c.clientPool, id)
-				log.Debug("mux client", id, "closed")
+				log.Debug().Interface("id", id).Msg("mux client closed")
 			}
 			c.clientPoolLock.Unlock()
 			return
@@ -147,7 +150,7 @@ func (c *Client) DialConn(*tunnel.Address, tunnel.Tunnel) (tunnel.Conn, error) {
 	for _, info := range c.clientPool {
 		if info.client.IsClosed() {
 			delete(c.clientPool, info.id)
-			log.Info(fmt.Sprintf("Mux client %x is closed", info.id))
+			log.Info().Msg(fmt.Sprintf("Mux client %x is closed", info.id))
 			continue
 		}
 		if info.client.NumStreams() < c.concurrency || c.concurrency <= 0 {
@@ -178,6 +181,6 @@ func NewClient(ctx context.Context, underlay tunnel.Client) (*Client, error) {
 		clientPool:  make(map[muxID]*smuxClientInfo),
 	}
 	go client.cleanLoop()
-	log.Debug("mux client created")
+	log.Debug().Msg("mux client created")
 	return client, nil
 }

@@ -4,7 +4,8 @@ import (
 	"io"
 	"math/rand"
 
-	"github.com/p4gefau1t/trojan-go/log"
+	"github.com/rs/zerolog/log"
+
 	"github.com/p4gefau1t/trojan-go/tunnel"
 )
 
@@ -66,7 +67,7 @@ func (c *stickyConn) Write(p []byte) (int, error) {
 				return 8, nil
 			}
 		} else {
-			log.Debug("other 8 bytes header")
+			log.Debug().Msg("other 8 bytes header")
 		}
 	}
 	_, err := c.Conn.Write(c.stickToPayload(p))

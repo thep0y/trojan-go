@@ -47,52 +47,52 @@ Trojan-Go 服务端兼容所有原 Trojan 客户端，如 Igniter、ShadowRocket
 
 1. 快速启动服务端和客户端（简易模式）
 
-    - 服务端
+   - 服务端
 
-        ```shell
-        sudo ./trojan-go -server -remote 127.0.0.1:80 -local 0.0.0.0:443 -key ./your_key.key -cert ./your_cert.crt -password your_password
-        ```
+     ```shell
+     sudo ./trojan-go -server -remote 127.0.0.1:80 -local 0.0.0.0:443 -key ./your_key.key -cert ./your_cert.crt -password your_password
+     ```
 
-    - 客户端
+   - 客户端
 
-        ```shell
-        ./trojan-go -client -remote example.com:443 -local 127.0.0.1:1080 -password your_password
-        ```
+     ```shell
+     ./trojan-go -client -remote example.com:443 -local 127.0.0.1:1080 -password your_password
+     ```
 
 2. 使用配置文件启动客户端 / 服务端 / 透明代理 / 中继（一般模式）
 
-    ```shell
-    ./trojan-go -config config.json
-    ```
+   ```shell
+   ./trojan-go -config config.json
+   ```
 
 3. 使用 URL 启动客户端（格式参见文档）
 
-    ```shell
-    ./trojan-go -url 'trojan-go://password@cloudflare.com/?type=ws&path=%2Fpath&host=your-site.com'
-    ```
+   ```shell
+   ./trojan-go -url 'trojan-go://password@cloudflare.com/?type=ws&path=%2Fpath&host=your-site.com'
+   ```
 
 4. 使用 Docker 部署
 
-    ```shell
-    docker run \
-        --name trojan-go \
-        -d \
-        -v /etc/trojan-go/:/etc/trojan-go \
-        --network host \
-        p4gefau1t/trojan-go
-    ```
+   ```shell
+   docker run \
+       --name trojan-go \
+       -d \
+       -v /etc/trojan-go/:/etc/trojan-go \
+       --network host \
+       p4gefau1t/trojan-go
+   ```
 
    或者
 
-    ```shell
-    docker run \
-        --name trojan-go \
-        -d \
-        -v /path/to/host/config:/path/in/container \
-        --network host \
-        p4gefau1t/trojan-go \
-        /path/in/container/config.json
-    ```
+   ```shell
+   docker run \
+       --name trojan-go \
+       -d \
+       -v /path/to/host/config:/path/in/container \
+       --network host \
+       p4gefau1t/trojan-go \
+       /path/in/container/config.json
+   ```
 
 ## 特性
 
@@ -286,7 +286,7 @@ make install #安装systemd服务等，可选
 或者使用 Go 自行编译：
 
 ```shell
-go build -tags "full"
+go build -tags "full" -ldflags "-s -w"
 ```
 
 Go 支持通过设置环境变量进行交叉编译，例如：
@@ -294,20 +294,22 @@ Go 支持通过设置环境变量进行交叉编译，例如：
 编译适用于 64 位 Windows 操作系统的可执行文件：
 
 ```shell
-CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -tags "full"
+CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -tags "full" -ldflags "-s -w"
 ```
 
 编译适用于 Apple Silicon 的可执行文件：
 
 ```shell
-CGO_ENABLED=0 GOOS=macos GOARCH=arm64 go build -tags "full"
+CGO_ENABLED=0 GOOS=macos GOARCH=arm64 go build -tags "full" -ldflags "-s -w"
 ```
 
 编译适用于 64 位 Linux 操作系统的可执行文件：
 
 ```shell
-CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -tags "full"
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -tags "full" -ldflags "-s -w"
 ```
+
+对客户端来说不需要使用`upx`等压缩软件对编译后的可执行二进制文件进一步压缩，服务端通常来说也不在乎不到 20M 的空间占用，只有服务器硬盘所剩空间不足时才需要压缩可执行二进制文件。
 
 ## 致谢
 

@@ -1,14 +1,15 @@
 package geodata
 
 import (
-	"io/ioutil"
+	"fmt"
+	"os"
 	"strings"
 
+	"github.com/rs/zerolog/log"
 	v2router "github.com/v2fly/v2ray-core/v4/app/router"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/p4gefau1t/trojan-go/common"
-	"github.com/p4gefau1t/trojan-go/log"
 )
 
 type geoipCache map[string]*v2router.GeoIP
@@ -35,7 +36,7 @@ func (g geoipCache) Unmarshal(filename, code string) (*v2router.GeoIP, error) {
 	asset := common.GetAssetLocation(filename)
 	idx := strings.ToLower(asset + ":" + code)
 	if g.Has(idx) {
-		log.Debugf("geoip cache HIT: %s -> %s", code, idx)
+		log.Debug().Msg(fmt.Sprintf("geoip cache HIT: %s -> %s", code, idx))
 		return g.Get(idx), nil
 	}
 
@@ -54,8 +55,9 @@ func (g geoipCache) Unmarshal(filename, code string) (*v2router.GeoIP, error) {
 
 	case ErrFailedToReadBytes, ErrFailedToReadExpectedLenBytes,
 		ErrInvalidGeodataFile, ErrInvalidGeodataVarintLength:
-		log.Warnf("failed to decode geoip file: %s, fallback to the original ReadFile method", filename)
-		geoipBytes, err = ioutil.ReadFile(asset)
+		log.Warn().
+			Msg(fmt.Sprintf("failed to decode geoip file: %s, fallback to the original ReadFile method", filename))
+		geoipBytes, err = os.ReadFile(asset)
 		if err != nil {
 			return nil, err
 		}
@@ -101,7 +103,7 @@ func (g geositeCache) Unmarshal(filename, code string) (*v2router.GeoSite, error
 	asset := common.GetAssetLocation(filename)
 	idx := strings.ToLower(asset + ":" + code)
 	if g.Has(idx) {
-		log.Debugf("geosite cache HIT: %s -> %s", code, idx)
+		log.Debug().Msg(fmt.Sprintf("geosite cache HIT: %s -> %s", code, idx))
 		return g.Get(idx), nil
 	}
 
@@ -120,8 +122,9 @@ func (g geositeCache) Unmarshal(filename, code string) (*v2router.GeoSite, error
 
 	case ErrFailedToReadBytes, ErrFailedToReadExpectedLenBytes,
 		ErrInvalidGeodataFile, ErrInvalidGeodataVarintLength:
-		log.Warnf("failed to decode geoip file: %s, fallback to the original ReadFile method", filename)
-		geositeBytes, err = ioutil.ReadFile(asset)
+		log.Warn().
+			Msg(fmt.Sprintf("failed to decode geoip file: %s, fallback to the original ReadFile method", filename))
+		geositeBytes, err = os.ReadFile(asset)
 		if err != nil {
 			return nil, err
 		}

@@ -5,7 +5,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/p4gefau1t/trojan-go/log"
+	"github.com/rs/zerolog/log"
 )
 
 type RewindReader struct {
@@ -34,7 +34,7 @@ func (r *RewindReader) Read(p []byte) (int, error) {
 	if r.buffering {
 		r.buf = append(r.buf, p[:n]...)
 		if len(r.buf) > r.bufferSize*2 {
-			log.Debug("read too many bytes!")
+			log.Debug().Msg("read too many bytes!")
 		}
 	}
 	return n, err

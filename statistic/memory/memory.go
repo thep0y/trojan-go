@@ -6,11 +6,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"golang.org/x/time/rate"
 
 	"github.com/p4gefau1t/trojan-go/common"
 	"github.com/p4gefau1t/trojan-go/config"
-	"github.com/p4gefau1t/trojan-go/log"
 	"github.com/p4gefau1t/trojan-go/statistic"
 )
 
@@ -229,7 +229,7 @@ func NewAuthenticator(ctx context.Context) (statistic.Authenticator, error) {
 		hash := common.SHA224String(password)
 		u.AddUser(hash)
 	}
-	log.Debug("memory authenticator created")
+	log.Debug().Msg("memory authenticator created")
 	return u, nil
 }
 

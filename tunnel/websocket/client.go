@@ -4,11 +4,11 @@ import (
 	"context"
 	"strings"
 
+	"github.com/rs/zerolog/log"
 	"golang.org/x/net/websocket"
 
 	"github.com/p4gefau1t/trojan-go/common"
 	"github.com/p4gefau1t/trojan-go/config"
-	"github.com/p4gefau1t/trojan-go/log"
 	"github.com/p4gefau1t/trojan-go/tunnel"
 )
 
@@ -54,9 +54,9 @@ func NewClient(ctx context.Context, underlay tunnel.Client) (*Client, error) {
 	}
 	if cfg.Websocket.Host == "" {
 		cfg.Websocket.Host = cfg.RemoteHost
-		log.Warn("empty websocket hostname")
+		log.Warn().Msg("empty websocket hostname")
 	}
-	log.Debug("websocket client created")
+	log.Debug().Msg("websocket client created")
 	return &Client{
 		hostname: cfg.Websocket.Host,
 		path:     cfg.Websocket.Path,

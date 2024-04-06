@@ -5,14 +5,14 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"sync"
 	"time"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/p4gefau1t/trojan-go/common"
 	"github.com/p4gefau1t/trojan-go/config"
-	"github.com/p4gefau1t/trojan-go/log"
 	"github.com/p4gefau1t/trojan-go/tunnel"
 )
 
@@ -74,7 +74,7 @@ func (s *Server) handshake(conn net.Conn) (*Conn, error) {
 	if _, err := conn.Read(nmethods[:]); err != nil {
 		return nil, common.NewError("failed to read NMETHODS")
 	}
-	if _, err := io.CopyN(ioutil.Discard, conn, int64(nmethods[0])); err != nil {
+	if _, err := io.CopyN(io.Discard, conn, int64(nmethods[0])); err != nil {
 		return nil, common.NewError("socks failed to read methods").Base(err)
 	}
 	if _, err := conn.Write([]byte{0x5, 0x0}); err != nil {
@@ -119,13 +119,13 @@ func (s *Server) packetDispatchLoop() {
 		if err != nil {
 			select {
 			case <-s.ctx.Done():
-				log.Debug("exiting")
+				log.Debug().Msg("exiting")
 				return
 			default:
 				continue
 			}
 		}
-		log.Debug("socks recv udp packet from", src)
+		log.Debug().Stringer("from", src).Msg("socks recv udp packet from")
 		s.mappingLock.RLock()
 		conn, found := s.mapping[src.String()]
 		s.mappingLock.RUnlock()
@@ -150,18 +150,21 @@ func (s *Server) packetDispatchLoop() {
 						buf.Write(info.payload)
 						_, err := s.listenPacketConn.WriteTo(buf.Bytes(), conn.src)
 						if err != nil {
-							log.Error("socks failed to respond packet to", src)
+							log.Error().Stringer("to", src).Msg("socks failed to respond packet to")
 							return
 						}
-						log.Debug("socks respond udp packet to", src, "metadata", info.metadata)
+						log.Debug().
+							Stringer("to", src).
+							Stringer("metadata", info.metadata).
+							Msg("socks respond udp packet")
 					case <-time.After(time.Second * 5):
-						log.Info("socks udp session timeout, closed")
+						log.Info().Msg("socks udp session timeout, closed")
 						s.mappingLock.Lock()
 						delete(s.mapping, src.String())
 						s.mappingLock.Unlock()
 						return
 					case <-conn.ctx.Done():
-						log.Info("socks udp session closed")
+						log.Info().Msg("socks udp session closed")
 						return
 					}
 				}
@@ -172,12 +175,12 @@ func (s *Server) packetDispatchLoop() {
 			s.mappingLock.Unlock()
 
 			s.packetChan <- conn
-			log.Info("socks new udp session from", src)
+			log.Info().Stringer("from", src).Msg("socks new udp session")
 		}
 		r := bytes.NewBuffer(buf[3:n])
 		address := new(tunnel.Address)
 		if err := address.ReadFrom(r); err != nil {
-			log.Error(common.NewError("socks failed to parse incoming packet").Base(err))
+			log.Error().Err(err).Msg("socks failed to parse incoming packet")
 			continue
 		}
 		payload := make([]byte, MaxPacketSize)
@@ -190,7 +193,7 @@ func (s *Server) packetDispatchLoop() {
 			payload: payload[:length],
 		}:
 		default:
-			log.Warn("socks udp queue full")
+			log.Warn().Msg("socks udp queue full")
 		}
 	}
 }
@@ -199,20 +202,23 @@ func (s *Server) acceptLoop() {
 	for {
 		conn, err := s.underlay.AcceptConn(&Tunnel{})
 		if err != nil {
-			log.Error(common.NewError("socks accept err").Base(err))
+			log.Error().Err(err).Msg("socks accept err")
 			return
 		}
 		go func(conn net.Conn) {
 			newConn, err := s.handshake(conn)
 			if err != nil {
-				log.Error(common.NewError("socks failed to handshake with client").Base(err))
+				log.Error().Err(err).Msg("socks failed to handshake with client")
 				return
 			}
-			log.Info("socks connection from", conn.RemoteAddr(), "metadata", newConn.metadata.String())
+			log.Info().
+				Stringer("from", conn.RemoteAddr()).
+				Stringer("metadata", newConn.metadata).
+				Msg("socks connection")
 			switch newConn.metadata.Command {
 			case Connect:
 				if err := s.connect(newConn); err != nil {
-					log.Error(common.NewError("socks failed to respond CONNECT").Base(err))
+					log.Error().Err(err).Msg("socks failed to respond CONNECT")
 					newConn.Close()
 					return
 				}
@@ -222,14 +228,16 @@ func (s *Server) acceptLoop() {
 				defer newConn.Close()
 				associateAddr := tunnel.NewAddressFromHostPort("udp", s.localHost, s.localPort)
 				if err := s.associate(newConn, associateAddr); err != nil {
-					log.Error(common.NewError("socks failed to respond to associate request").Base(err))
+					log.Error().Err(err).Msg("socks failed to respond to associate request")
 					return
 				}
 				buf := [16]byte{}
 				newConn.Read(buf[:])
-				log.Debug("socks udp session ends")
+				log.Debug().Msg("socks udp session ends")
 			default:
-				log.Error(common.NewError(fmt.Sprintf("unknown socks command %d", newConn.metadata.Command)))
+				log.Error().Msg(
+					fmt.Sprintf("unknown socks command %d", newConn.metadata.Command),
+				)
 				newConn.Close()
 			}
 		}(conn)
@@ -258,6 +266,6 @@ func NewServer(ctx context.Context, underlay tunnel.Server) (tunnel.Server, erro
 	}
 	go server.acceptLoop()
 	go server.packetDispatchLoop()
-	log.Debug("socks server created")
+	log.Debug().Msg("socks server created")
 	return server, nil
 }

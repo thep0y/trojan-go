@@ -7,8 +7,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/p4gefau1t/trojan-go/common"
-	"github.com/p4gefau1t/trojan-go/log"
 	"github.com/p4gefau1t/trojan-go/option"
 	"github.com/p4gefau1t/trojan-go/proxy"
 )
@@ -70,7 +71,7 @@ func (u *url) Handle() error {
 	}
 	info, err := NewShareInfoFromURL(*u.url)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Send()
 	}
 	wsEnabled := false
 	if info.Type == ShareInfoTypeWebSocket {
@@ -83,7 +84,7 @@ func (u *url) Handle() error {
 		ssEnabled = true
 		ssConfig := strings.Split(info.Encryption[3:], ":")
 		if len(ssConfig) != 2 {
-			log.Fatalf("invalid shadowsocks config: %s", info.Encryption)
+			log.Fatal().Str("config", info.Encryption).Msg("invalid shadowsocks config")
 		}
 		ssMethod = ssConfig[0]
 		ssPassword = ssConfig[1]
@@ -102,7 +103,7 @@ func (u *url) Handle() error {
 		val := ""
 		l := strings.Split(o, "=")
 		if len(l) != 2 {
-			log.Fatal("option format error, no \"key=value\" pair found:", o)
+			log.Fatal().Msg("option format error, no \"key=value\" pair found: " + o)
 		}
 		key = l[0]
 		val = l[1]
@@ -110,33 +111,33 @@ func (u *url) Handle() error {
 		case "mux":
 			muxEnabled, err = strconv.ParseBool(val)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatal().Err(err).Send()
 			}
 		case "listen":
 			h, p, err := net.SplitHostPort(val)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatal().Err(err).Send()
 			}
 			listenHost = h
 			lp, err := strconv.Atoi(p)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatal().Err(err).Send()
 			}
 			listenPort = lp
 		case "api":
 			apiEnabled = true
 			h, p, err := net.SplitHostPort(val)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatal().Err(err).Send()
 			}
 			apiHost = h
 			lp, err := strconv.Atoi(p)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatal().Err(err).Send()
 			}
 			apiPort = lp
 		default:
-			log.Fatal("invalid option", o)
+			log.Fatal().Msg("invalid option " + o)
 		}
 	}
 	config := UrlConfig{
@@ -170,12 +171,12 @@ func (u *url) Handle() error {
 	}
 	data, err := json.Marshal(&config)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Send()
 	}
-	log.Debug(string(data))
+	log.Debug().Msg(string(data))
 	client, err := proxy.NewProxyFromConfigData(data, true)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Send()
 	}
 	return client.Run()
 }

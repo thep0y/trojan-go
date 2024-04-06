@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"net"
 
+	"github.com/rs/zerolog/log"
 	"github.com/txthinking/socks5"
 
 	"github.com/p4gefau1t/trojan-go/common"
-	"github.com/p4gefau1t/trojan-go/log"
 	"github.com/p4gefau1t/trojan-go/tunnel"
 )
 
@@ -63,7 +63,10 @@ type SocksPacketConn struct {
 	socksClient *socks5.Client
 }
 
-func (c *SocksPacketConn) WriteWithMetadata(payload []byte, metadata *tunnel.Metadata) (int, error) {
+func (c *SocksPacketConn) WriteWithMetadata(
+	payload []byte,
+	metadata *tunnel.Metadata,
+) (int, error) {
 	buf := bytes.NewBuffer(make([]byte, 0, MaxPacketSize))
 	buf.Write([]byte{0, 0, 0}) // RSV, FRAG
 	common.Must(metadata.Address.WriteTo(buf))
@@ -72,7 +75,8 @@ func (c *SocksPacketConn) WriteWithMetadata(payload []byte, metadata *tunnel.Met
 	if err != nil {
 		return 0, err
 	}
-	log.Debug("sent udp packet to " + c.socksAddr.String() + " with metadata " + metadata.String())
+	log.Debug().
+		Msg("sent udp packet to " + c.socksAddr.String() + " with metadata " + metadata.String())
 	return len(payload), nil
 }
 
@@ -82,7 +86,7 @@ func (c *SocksPacketConn) ReadWithMetadata(payload []byte) (int, *tunnel.Metadat
 	if err != nil {
 		return 0, nil, err
 	}
-	log.Debug("recv udp packet from " + from.String())
+	log.Debug().Msg("recv udp packet from " + from.String())
 	addr := new(tunnel.Address)
 	r := bytes.NewBuffer(buf[3:n])
 	if err := addr.ReadFrom(r); err != nil {

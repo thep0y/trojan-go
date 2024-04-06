@@ -6,8 +6,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/p4gefau1t/trojan-go/common"
-	"github.com/p4gefau1t/trojan-go/log"
 )
 
 type TrafficMeter interface {
@@ -60,7 +61,7 @@ func NewAuthenticator(ctx context.Context, name string) (Authenticator, error) {
 	createdAuthLock.Lock() // avoid concurrent map read/write
 	defer createdAuthLock.Unlock()
 	if auth, found := createdAuth[ctx]; found {
-		log.Debug("authenticator has been created:", name)
+		log.Debug().Str("name", name).Msg("authenticator has been created")
 		return auth, nil
 	}
 	creator, found := authCreators[strings.ToUpper(name)]

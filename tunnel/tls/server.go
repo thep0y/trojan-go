@@ -17,9 +17,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/p4gefau1t/trojan-go/common"
 	"github.com/p4gefau1t/trojan-go/config"
-	"github.com/p4gefau1t/trojan-go/log"
 	"github.com/p4gefau1t/trojan-go/redirector"
 	"github.com/p4gefau1t/trojan-go/tunnel"
 	"github.com/p4gefau1t/trojan-go/tunnel/tls/fingerprint"
@@ -75,7 +76,7 @@ func (s *Server) acceptLoop() {
 			select {
 			case <-s.ctx.Done():
 			default:
-				log.Fatal(common.NewError("transport accept error" + err.Error()))
+				log.Fatal().Err(err).Msg("transport accept error")
 			}
 			return
 		}
@@ -121,7 +122,7 @@ func (s *Server) acceptLoop() {
 				if strings.Contains(err.Error(), "first record does not look like a TLS handshake") {
 					// not a valid tls client hello
 					handshakeRewindConn.Rewind()
-					log.Error(common.NewError("failed to perform tls handshake with " + tlsConn.RemoteAddr().String() + ", redirecting").Base(err))
+					log.Error().Err(err).Msg("failed to perform tls handshake with " + tlsConn.RemoteAddr().String() + ", redirecting")
 					switch {
 					case s.fallbackAddress != nil:
 						s.redir.Redirect(&redirector.Redirection{
@@ -137,14 +138,14 @@ func (s *Server) acceptLoop() {
 				} else {
 					// in other cases, simply close it
 					tlsConn.Close()
-					log.Error(common.NewError("tls handshake failed").Base(err))
+					log.Error().Err(err).Msg("tls handshake failed")
 				}
 				return
 			}
 
-			log.Info("tls connection from", conn.RemoteAddr())
+			log.Info().Stringer("addr", conn.RemoteAddr()).Msg("tls connection from")
 			state := tlsConn.ConnectionState()
-			log.Trace("tls handshake", tls.CipherSuiteName(state.CipherSuite), state.DidResume, state.NegotiatedProtocol)
+			log.Trace().Str("cipher-suite", tls.CipherSuiteName(state.CipherSuite)).Bool("did-resume", state.DidResume).Str("negotiated-protocol", state.NegotiatedProtocol).Msg("tls handshake")
 
 			// we use a real http header parser to mimic a real http server
 			rewindConn := common.NewRewindConn(tlsConn)
@@ -161,7 +162,7 @@ func (s *Server) acceptLoop() {
 			} else {
 				if atomic.LoadInt32(&s.nextHTTP) != 1 {
 					// there is no websocket layer waiting for connections, redirect it
-					log.Error("incoming http request, but no websocket server is listening")
+					log.Error().Msg("incoming http request, but no websocket server is listening")
 					s.redir.Redirect(&redirector.Redirection{
 						InboundConn: rewindConn,
 						RedirectTo:  s.fallbackAddress,
@@ -169,7 +170,7 @@ func (s *Server) acceptLoop() {
 					return
 				}
 				// this is a http request, pass it to websocket protocol layer
-				log.Debug("http req: ", httpReq)
+				log.Debug().Interface("request", httpReq).Msg("http req")
 				s.wsChan <- &transport.Conn{
 					Conn: rewindConn,
 				}
@@ -181,7 +182,7 @@ func (s *Server) acceptLoop() {
 func (s *Server) AcceptConn(overlay tunnel.Tunnel) (tunnel.Conn, error) {
 	if _, ok := overlay.(*websocket.Tunnel); ok {
 		atomic.StoreInt32(&s.nextHTTP, 1)
-		log.Debug("next proto http")
+		log.Debug().Msg("next proto http")
 		// websocket overlay
 		select {
 		case conn := <-s.wsChan:
@@ -208,22 +209,22 @@ func (s *Server) checkKeyPairLoop(checkRate time.Duration, keyPath string, certP
 	ticker := time.NewTicker(checkRate)
 
 	for {
-		log.Debug("checking cert...")
-		keyBytes, err := ioutil.ReadFile(keyPath)
+		log.Debug().Msg("checking cert...")
+		keyBytes, err := os.ReadFile(keyPath)
 		if err != nil {
-			log.Error(common.NewError("tls failed to check key").Base(err))
+			log.Error().Err(err).Msg("tls failed to check key")
 			continue
 		}
-		certBytes, err := ioutil.ReadFile(certPath)
+		certBytes, err := os.ReadFile(certPath)
 		if err != nil {
-			log.Error(common.NewError("tls failed to check cert").Base(err))
+			log.Error().Err(err).Msg("tls failed to check cert")
 			continue
 		}
 		if !bytes.Equal(keyBytes, lastKeyBytes) || !bytes.Equal(lastCertBytes, certBytes) {
-			log.Info("new key pair detected")
+			log.Info().Msg("new key pair detected")
 			keyPair, err := loadKeyPair(keyPath, certPath, password)
 			if err != nil {
-				log.Error(common.NewError("tls failed to load new key pair").Base(err))
+				log.Error().Err(err).Msg("tls failed to load new key pair")
 				continue
 			}
 			s.keyPairLock.Lock()
@@ -237,7 +238,7 @@ func (s *Server) checkKeyPairLoop(checkRate time.Duration, keyPath string, certP
 		case <-ticker.C:
 			continue
 		case <-s.ctx.Done():
-			log.Debug("exiting")
+			log.Debug().Msg("exiting")
 			ticker.Stop()
 			return
 		}
@@ -296,7 +297,7 @@ func NewServer(ctx context.Context, underlay tunnel.Server) (*Server, error) {
 	if cfg.TLS.FallbackPort != 0 {
 		if cfg.TLS.FallbackHost == "" {
 			cfg.TLS.FallbackHost = cfg.RemoteHost
-			log.Warn("empty tls fallback address")
+			log.Warn().Msg("empty tls fallback address")
 		}
 		fallbackAddress = tunnel.NewAddressFromHostPort("tcp", cfg.TLS.FallbackHost, cfg.TLS.FallbackPort)
 		fallbackConn, err := net.Dial("tcp", fallbackAddress.String())
@@ -305,7 +306,7 @@ func NewServer(ctx context.Context, underlay tunnel.Server) (*Server, error) {
 		}
 		fallbackConn.Close()
 	} else {
-		log.Warn("empty tls fallback port")
+		log.Warn().Msg("empty tls fallback port")
 		if cfg.TLS.HTTPResponseFileName != "" {
 			httpRespBody, err := ioutil.ReadFile(cfg.TLS.HTTPResponseFileName)
 			if err != nil {
@@ -313,7 +314,7 @@ func NewServer(ctx context.Context, underlay tunnel.Server) (*Server, error) {
 			}
 			httpResp = httpRespBody
 		} else {
-			log.Warn("empty tls http response")
+			log.Warn().Msg("empty tls http response")
 		}
 	}
 
@@ -324,7 +325,7 @@ func NewServer(ctx context.Context, underlay tunnel.Server) (*Server, error) {
 
 	var keyLogger io.WriteCloser
 	if cfg.TLS.KeyLogPath != "" {
-		log.Warn("tls key logging activated. USE OF KEY LOGGING COMPROMISES SECURITY. IT SHOULD ONLY BE USED FOR DEBUGGING.")
+		log.Warn().Msg("tls key logging activated. USE OF KEY LOGGING COMPROMISES SECURITY. IT SHOULD ONLY BE USED FOR DEBUGGING.")
 		file, err := os.OpenFile(cfg.TLS.KeyLogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 		if err != nil {
 			return nil, common.NewError("failed to open key log file").Base(err)
@@ -367,6 +368,6 @@ func NewServer(ctx context.Context, underlay tunnel.Server) (*Server, error) {
 		)
 	}
 
-	log.Debug("tls server created")
+	log.Debug().Msg("tls server created")
 	return server, nil
 }

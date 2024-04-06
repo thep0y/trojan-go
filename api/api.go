@@ -3,7 +3,8 @@ package api
 import (
 	"context"
 
-	"github.com/p4gefau1t/trojan-go/log"
+	"github.com/rs/zerolog/log"
+
 	"github.com/p4gefau1t/trojan-go/statistic"
 )
 
@@ -17,9 +18,9 @@ func RegisterHandler(name string, handler Handler) {
 
 func RunService(ctx context.Context, name string, auth statistic.Authenticator) error {
 	if h, ok := handlers[name]; ok {
-		log.Debug("api handler found", name)
+		log.Debug().Str("name", name).Msg("api handler found")
 		return h(ctx, auth)
 	}
-	log.Debug("api handler not found", name)
+	log.Debug().Str("name", name).Msg("api handler not found")
 	return nil
 }

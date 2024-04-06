@@ -5,13 +5,13 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"strings"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/p4gefau1t/trojan-go/common"
-	"github.com/p4gefau1t/trojan-go/log"
 	"github.com/p4gefau1t/trojan-go/tunnel"
 )
 
@@ -74,33 +74,42 @@ func (s *Server) acceptLoop() {
 		if err != nil {
 			select {
 			case <-s.ctx.Done():
-				log.Error(common.NewError("http closed"))
+				log.Error().Err(err).Msg("http closed")
 				return
 			default:
-				log.Error(common.NewError("http failed to accept connection").Base(err))
+				log.Error().Err(err).Msg("http failed to accept connection")
 				continue
 			}
 		}
 
 		go func(conn net.Conn) {
-			reqBufReader := bufio.NewReader(ioutil.NopCloser(conn))
+			reqBufReader := bufio.NewReader(io.NopCloser(conn))
 			req, err := http.ReadRequest(reqBufReader)
 			if err != nil {
-				log.Error(common.NewError("not a valid http request").Base(err))
+				log.Error().Err(err).Msg("not a valid http request")
 				return
 			}
+			log.Trace().
+				Str("host", req.Host).
+				Stringer("uri", req.URL).
+				Interface("header", req.Header).
+				Msg("requset info")
 
 			if strings.ToUpper(req.Method) == "CONNECT" { // CONNECT
 				addr, err := tunnel.NewAddressFromAddr("tcp", req.Host)
 				if err != nil {
-					log.Error(common.NewError("invalid http dest address").Base(err))
+					log.Error().Err(err).Msg("invalid http dest address")
 					conn.Close()
 					return
 				}
-				resp := fmt.Sprintf("HTTP/%d.%d 200 Connection established\r\n\r\n", req.ProtoMajor, req.ProtoMinor)
+				resp := fmt.Sprintf(
+					"HTTP/%d.%d 200 Connection established\r\n\r\n",
+					req.ProtoMajor,
+					req.ProtoMinor,
+				)
 				_, err = conn.Write([]byte(resp))
 				if err != nil {
-					log.Error("http failed to respond connect request")
+					log.Error().Err(err).Msg("http failed to respond connect request")
 					conn.Close()
 					return
 				}
@@ -119,7 +128,7 @@ func (s *Server) acceptLoop() {
 					if addr, err = tunnel.NewAddressFromAddr("tcp", req.Host); err != nil {
 						addr = tunnel.NewAddressFromHostPort("tcp", req.Host, 80)
 					}
-					log.Debug("http dest", addr)
+					log.Debug().Stringer("http dest", addr).Send()
 
 					ctx, cancel := context.WithCancel(s.ctx)
 					newConn := &OtherConn{
@@ -136,19 +145,19 @@ func (s *Server) acceptLoop() {
 
 					err = req.Write(reqWriter) // write request to the remote
 					if err != nil {
-						log.Error(common.NewError("http failed to write http request").Base(err))
+						log.Error().Err(err).Msg("http failed to write http request")
 						return
 					}
 
-					respBufReader := bufio.NewReader(ioutil.NopCloser(respReader)) // read response from the remote
+					respBufReader := bufio.NewReader(io.NopCloser(respReader)) // read response from the remote
 					resp, err := http.ReadResponse(respBufReader, req)
 					if err != nil {
-						log.Error(common.NewError("http failed to read http response").Base(err))
+						log.Error().Err(err).Msg("http failed to read http response")
 						return
 					}
 					err = resp.Write(conn) // send the response back to the local
 					if err != nil {
-						log.Error(common.NewError("http failed to write the response back").Base(err))
+						log.Error().Err(err).Msg("http failed to write the response back")
 						return
 					}
 					newConn.Close()
@@ -157,7 +166,7 @@ func (s *Server) acceptLoop() {
 
 					req, err = http.ReadRequest(reqBufReader) // read the next http request from local
 					if err != nil {
-						log.Error(common.NewError("http failed to the read request from local").Base(err))
+						log.Error().Err(err).Msg("http failed to the read request from local")
 						return
 					}
 				}

@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"golang.org/x/net/websocket"
 
 	"github.com/p4gefau1t/trojan-go/common"
-	"github.com/p4gefau1t/trojan-go/log"
 )
 
 var (
@@ -34,7 +34,7 @@ func runHelloHTTPServer() {
 			conn.Write([]byte("HelloWorld"))
 		},
 		Handshake: func(wsConfig *websocket.Config, httpRequest *http.Request) error {
-			log.Debug("websocket url", httpRequest.URL, "origin", httpRequest.Header.Get("Origin"))
+			log.Debug().Msg(fmt.Sprint("websocket url", httpRequest.URL, "origin", httpRequest.Header.Get("Origin")))
 			return nil
 		},
 	}
@@ -100,7 +100,7 @@ func runUDPEchoServer() {
 			if err != nil {
 				return
 			}
-			log.Info("Echo from", addr)
+			log.Info().Msg(fmt.Sprint("Echo from", addr))
 			conn.WriteTo(buf[0:n], addr)
 		}
 	}()

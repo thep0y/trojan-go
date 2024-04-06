@@ -7,12 +7,11 @@ import (
 	"strings"
 	"time"
 
-	// MySQL Driver
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/rs/zerolog/log"
 
 	"github.com/p4gefau1t/trojan-go/common"
 	"github.com/p4gefau1t/trojan-go/config"
-	"github.com/p4gefau1t/trojan-go/log"
 	"github.com/p4gefau1t/trojan-go/statistic"
 	"github.com/p4gefau1t/trojan-go/statistic/memory"
 )
@@ -33,9 +32,16 @@ func (a *Authenticator) updater() {
 			hash := user.Hash()
 			sent, recv := user.ResetTraffic()
 
-			s, err := a.db.Exec("UPDATE `users` SET `upload`=`upload`+?, `download`=`download`+? WHERE `password`=?;", recv, sent, hash)
+			s, err := a.db.Exec(
+				"UPDATE `users` SET `upload`=`upload`+?, `download`=`download`+? WHERE `password`=?;",
+				recv,
+				sent,
+				hash,
+			)
 			if err != nil {
-				log.Error(common.NewError("failed to update data to user table").Base(err))
+				log.Error().
+					Err(err).
+					Msg("failed to update data to user table")
 				continue
 			}
 			if r, err := s.RowsAffected(); err != nil {
@@ -44,12 +50,12 @@ func (a *Authenticator) updater() {
 				}
 			}
 		}
-		log.Info("buffered data has been written into the database")
+		log.Info().Msg("buffered data has been written into the database")
 
 		// update memory
 		rows, err := a.db.Query("SELECT password,quota,download,upload FROM users")
 		if err != nil || rows.Err() != nil {
-			log.Error(common.NewError("failed to pull data from the database").Base(err))
+			log.Error().Err(err).Msg("failed to pull data from the database")
 			time.Sleep(a.updateDuration)
 			continue
 		}
@@ -58,7 +64,7 @@ func (a *Authenticator) updater() {
 			var quota, download, upload int64
 			err := rows.Scan(&hash, &quota, &download, &upload)
 			if err != nil {
-				log.Error(common.NewError("failed to obtain data from the query result").Base(err))
+				log.Error().Err(err).Msg("failed to obtain data from the query result")
 				break
 			}
 			if download+upload < quota || quota < 0 {
@@ -71,14 +77,32 @@ func (a *Authenticator) updater() {
 		select {
 		case <-time.After(a.updateDuration):
 		case <-a.ctx.Done():
-			log.Debug("MySQL daemon exiting...")
+			log.Debug().Msg("MySQL daemon exiting...")
 			return
 		}
 	}
 }
 
-func connectDatabase(driverName, username, password, ip string, port int, dbName string) (*sql.DB, error) {
-	path := strings.Join([]string{username, ":", password, "@tcp(", ip, ":", fmt.Sprintf("%d", port), ")/", dbName, "?charset=utf8"}, "")
+func connectDatabase(
+	driverName, username, password, ip string,
+	port int,
+	dbName string,
+) (*sql.DB, error) {
+	path := strings.Join(
+		[]string{
+			username,
+			":",
+			password,
+			"@tcp(",
+			ip,
+			":",
+			fmt.Sprintf("%d", port),
+			")/",
+			dbName,
+			"?charset=utf8",
+		},
+		"",
+	)
 	return sql.Open(driverName, path)
 }
 
@@ -106,7 +130,7 @@ func NewAuthenticator(ctx context.Context) (statistic.Authenticator, error) {
 		Authenticator:  memoryAuth.(*memory.Authenticator),
 	}
 	go a.updater()
-	log.Debug("mysql authenticator created")
+	log.Debug().Msg("mysql authenticator created")
 	return a, nil
 }
 

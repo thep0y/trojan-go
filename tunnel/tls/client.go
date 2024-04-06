@@ -5,15 +5,16 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
 	"io"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	utls "github.com/refraction-networking/utls"
+	"github.com/rs/zerolog/log"
 
 	"github.com/p4gefau1t/trojan-go/common"
 	"github.com/p4gefau1t/trojan-go/config"
-	"github.com/p4gefau1t/trojan-go/log"
 	"github.com/p4gefau1t/trojan-go/tunnel"
 	"github.com/p4gefau1t/trojan-go/tunnel/tls/fingerprint"
 	"github.com/p4gefau1t/trojan-go/tunnel/transport"
@@ -99,12 +100,12 @@ func NewClient(ctx context.Context, underlay tunnel.Client) (*Client, error) {
 		default:
 			return nil, common.NewError("invalid fingerprint " + cfg.TLS.Fingerprint)
 		}
-		log.Info("tls fingerprint", cfg.TLS.Fingerprint, "applied")
+		log.Info().Msg(fmt.Sprintf("tls fingerprint %s applied", cfg.TLS.Fingerprint))
 	}
 
 	if cfg.TLS.SNI == "" {
 		cfg.TLS.SNI = cfg.RemoteHost
-		log.Warn("tls sni is unspecified")
+		log.Warn().Msg("tls sni is unspecified")
 	}
 
 	client := &Client{
@@ -118,16 +119,16 @@ func NewClient(ctx context.Context, underlay tunnel.Client) (*Client, error) {
 	}
 
 	if cfg.TLS.CertPath != "" {
-		caCertByte, err := ioutil.ReadFile(cfg.TLS.CertPath)
+		caCertByte, err := os.ReadFile(cfg.TLS.CertPath)
 		if err != nil {
 			return nil, common.NewError("failed to load cert file").Base(err)
 		}
 		client.ca = x509.NewCertPool()
 		ok := client.ca.AppendCertsFromPEM(caCertByte)
 		if !ok {
-			log.Warn("invalid cert list")
+			log.Warn().Msg("invalid cert list")
 		}
-		log.Info("using custom cert")
+		log.Info().Msg("using custom cert")
 
 		// print cert info
 		pemCerts := caCertByte
@@ -144,14 +145,14 @@ func NewClient(ctx context.Context, underlay tunnel.Client) (*Client, error) {
 			if err != nil {
 				continue
 			}
-			log.Trace("issuer:", cert.Issuer, "subject:", cert.Subject)
+			log.Trace().Msg(fmt.Sprintf("issuer: %s  subject: %s", cert.Issuer, cert.Subject))
 		}
 	}
 
 	if cfg.TLS.CertPath == "" {
-		log.Info("cert is unspecified, using default ca list")
+		log.Info().Msg("cert is unspecified, using default ca list")
 	}
 
-	log.Debug("tls client created")
+	log.Debug().Msg("tls client created")
 	return client, nil
 }

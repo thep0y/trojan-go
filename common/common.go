@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/p4gefau1t/trojan-go/log"
+	"github.com/rs/zerolog/log"
 )
 
 type Runnable interface {
@@ -28,7 +28,7 @@ func SHA224String(password string) string {
 func GetProgramDir() string {
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Send()
 	}
 	return dir
 }
@@ -40,9 +40,11 @@ func GetAssetLocation(file string) string {
 	if loc := os.Getenv("TROJAN_GO_LOCATION_ASSET"); loc != "" {
 		absPath, err := filepath.Abs(loc)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal().Err(err).Send()
 		}
-		log.Debugf("env set: TROJAN_GO_LOCATION_ASSET=%s", absPath)
+		log.Debug().
+			Str("TROJAN_GO_LOCATION_ASSET", absPath).
+			Msg("env set")
 		return filepath.Join(absPath, file)
 	}
 	return filepath.Join(GetProgramDir(), file)

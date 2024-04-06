@@ -3,17 +3,28 @@ package main
 import (
 	"flag"
 
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+
 	_ "github.com/p4gefau1t/trojan-go/component"
-	"github.com/p4gefau1t/trojan-go/log"
 	"github.com/p4gefau1t/trojan-go/option"
 )
 
+const (
+	TimeFormat = "2006-01-02 15:04:05.999999999"
+)
+
+func init() {
+	zerolog.TimeFieldFormat = TimeFormat
+}
+
 func main() {
+	log.Logger = log.With().Caller().Logger()
 	flag.Parse()
 	for {
 		h, err := option.PopOptionHandler()
 		if err != nil {
-			log.Fatal("invalid options")
+			log.Fatal().Msg("invalid options")
 		}
 		err = h.Handle()
 		if err == nil {

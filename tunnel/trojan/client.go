@@ -8,10 +8,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/p4gefau1t/trojan-go/api"
 	"github.com/p4gefau1t/trojan-go/common"
 	"github.com/p4gefau1t/trojan-go/config"
-	"github.com/p4gefau1t/trojan-go/log"
 	"github.com/p4gefau1t/trojan-go/statistic"
 	"github.com/p4gefau1t/trojan-go/statistic/memory"
 	"github.com/p4gefau1t/trojan-go/tunnel"
@@ -91,7 +92,13 @@ func (c *OutboundConn) Read(p []byte) (int, error) {
 }
 
 func (c *OutboundConn) Close() error {
-	log.Info("connection to", c.metadata, "closed", "sent:", common.HumanFriendlyTraffic(atomic.LoadUint64(&c.sent)), "recv:", common.HumanFriendlyTraffic(atomic.LoadUint64(&c.recv)))
+	log.Info().
+		Stringer("metadata", c.metadata).
+		Str("sent", common.HumanFriendlyTraffic(atomic.LoadUint64(&c.sent))).
+		Str("recv", common.HumanFriendlyTraffic(atomic.LoadUint64(&c.recv))).
+		Msg(
+			"connection closed",
+		)
 	return c.Conn.Close()
 }
 
@@ -177,7 +184,7 @@ func NewClient(ctx context.Context, client tunnel.Client) (*Client, error) {
 		return nil, common.NewError("no valid user found")
 	}
 
-	log.Debug("trojan client created")
+	log.Debug().Msg("trojan client created")
 	return &Client{
 		underlay: client,
 		ctx:      ctx,

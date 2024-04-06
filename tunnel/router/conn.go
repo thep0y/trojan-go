@@ -5,8 +5,9 @@ import (
 	"io"
 	"net"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/p4gefau1t/trojan-go/common"
-	"github.com/p4gefau1t/trojan-go/log"
 	"github.com/p4gefau1t/trojan-go/tunnel"
 )
 
@@ -34,7 +35,7 @@ func (c *PacketConn) packetLoop() {
 				case <-c.ctx.Done():
 					return
 				default:
-					log.Error("router packetConn error", err)
+					log.Error().Err(err).Msg("router packetConn error")
 					continue
 				}
 			}
@@ -52,7 +53,7 @@ func (c *PacketConn) packetLoop() {
 			case <-c.ctx.Done():
 				return
 			default:
-				log.Error("router packetConn error", err)
+				log.Error().Err(err).Msg("router packetConn error")
 				continue
 			}
 		}

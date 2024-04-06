@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"golang.org/x/net/websocket"
 
 	"github.com/p4gefau1t/trojan-go/common"
 	"github.com/p4gefau1t/trojan-go/config"
-	"github.com/p4gefau1t/trojan-go/log"
 	"github.com/p4gefau1t/trojan-go/redirector"
 	"github.com/p4gefau1t/trojan-go/tunnel"
 )
@@ -67,7 +67,7 @@ func (s *Server) AcceptConn(tunnel.Tunnel) (tunnel.Conn, error) {
 	rw := bufio.NewReadWriter(bufio.NewReader(rewindConn), bufio.NewWriter(rewindConn))
 	req, err := http.ReadRequest(rw.Reader)
 	if err != nil {
-		log.Debug("invalid http request")
+		log.Debug().Msg("invalid http request")
 		rewindConn.Rewind()
 		rewindConn.StopBuffering()
 		s.redir.Redirect(&redirector.Redirection{
@@ -77,7 +77,7 @@ func (s *Server) AcceptConn(tunnel.Tunnel) (tunnel.Conn, error) {
 		return nil, common.NewError("not a valid http request: " + conn.RemoteAddr().String()).Base(err)
 	}
 	if strings.ToLower(req.Header.Get("Upgrade")) != "websocket" || req.URL.Path != s.path {
-		log.Debug("invalid http websocket handshake request")
+		log.Debug().Msg("invalid http websocket handshake request")
 		rewindConn.Rewind()
 		rewindConn.StopBuffering()
 		s.redir.Redirect(&redirector.Redirection{
@@ -104,15 +104,15 @@ func (s *Server) AcceptConn(tunnel.Tunnel) (tunnel.Conn, error) {
 			wsConn = conn                              // store the websocket after handshaking
 			wsConn.PayloadType = websocket.BinaryFrame // treat it as a binary websocket
 
-			log.Debug("websocket obtained")
+			log.Debug().Msg("websocket obtained")
 			handshake <- struct{}{}
 			// this function SHOULD NOT return unless the connection is ended
 			// or the websocket will be closed by ServeHTTP method
 			<-ctx.Done()
-			log.Debug("websocket closed")
+			log.Debug().Msg("websocket closed")
 		},
 		Handshake: func(wsConfig *websocket.Config, httpRequest *http.Request) error {
-			log.Debug("websocket url", httpRequest.URL, "origin", httpRequest.Header.Get("Origin"))
+			log.Debug().Stringer("url", httpRequest.URL).Str("origin", httpRequest.Header.Get("Origin")).Msg("websocket url")
 			return nil
 		},
 	}
@@ -155,15 +155,15 @@ func NewServer(ctx context.Context, underlay tunnel.Server) (*Server, error) {
 		}
 	}
 	if cfg.RemoteHost == "" {
-		log.Warn("empty websocket redirection hostname")
+		log.Warn().Msg("empty websocket redirection hostname")
 		cfg.RemoteHost = cfg.Websocket.Host
 	}
 	if cfg.RemotePort == 0 {
-		log.Warn("empty websocket redirection port")
+		log.Warn().Msg("empty websocket redirection port")
 		cfg.RemotePort = 80
 	}
 	ctx, cancel := context.WithCancel(ctx)
-	log.Debug("websocket server created")
+	log.Debug().Msg("websocket server created")
 	return &Server{
 		enabled:   cfg.Websocket.Enabled,
 		hostname:  cfg.Websocket.Host,

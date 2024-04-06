@@ -6,9 +6,10 @@ import (
 	"os/exec"
 	"strconv"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/p4gefau1t/trojan-go/common"
 	"github.com/p4gefau1t/trojan-go/config"
-	"github.com/p4gefau1t/trojan-go/log"
 	"github.com/p4gefau1t/trojan-go/tunnel"
 	"github.com/p4gefau1t/trojan-go/tunnel/freedom"
 )
@@ -53,7 +54,7 @@ func NewClient(ctx context.Context, _ tunnel.Client) (*Client, error) {
 	serverAddress := tunnel.NewAddressFromHostPort("tcp", cfg.RemoteHost, cfg.RemotePort)
 
 	if cfg.TransportPlugin.Enabled {
-		log.Warn("trojan-go will use transport plugin and work in plain text mode")
+		log.Warn().Msg("trojan-go will use transport plugin and work in plain text mode")
 		switch cfg.TransportPlugin.Type {
 		case "shadowsocks":
 			pluginHost := "127.0.0.1"
@@ -69,8 +70,10 @@ func NewClient(ctx context.Context, _ tunnel.Client) (*Client, error) {
 			cfg.RemoteHost = pluginHost
 			cfg.RemotePort = pluginPort
 			serverAddress = tunnel.NewAddressFromHostPort("tcp", cfg.RemoteHost, cfg.RemotePort)
-			log.Debug("plugin address", serverAddress.String())
-			log.Debug("plugin env", cfg.TransportPlugin.Env)
+			log.Debug().Msg("plugin address " + serverAddress.String())
+			log.Debug().
+				Strs("env", cfg.TransportPlugin.Env).
+				Msg("plugin env")
 
 			cmd = exec.Command(cfg.TransportPlugin.Command, cfg.TransportPlugin.Arg...)
 			cmd.Env = append(cmd.Env, cfg.TransportPlugin.Env...)

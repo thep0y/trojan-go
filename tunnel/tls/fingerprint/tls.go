@@ -3,7 +3,7 @@ package fingerprint
 import (
 	"crypto/tls"
 
-	"github.com/p4gefau1t/trojan-go/log"
+	"github.com/rs/zerolog/log"
 )
 
 func ParseCipher(s []string) []uint16 {
@@ -17,7 +17,7 @@ func ParseCipher(s []string) []uint16 {
 				break
 			}
 			if !found {
-				log.Warn("invalid cipher suite", p, "skipped")
+				log.Warn().Str("p", p).Msg("skipped invalid cipher suite")
 			}
 		}
 	}

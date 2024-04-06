@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"io"
-	"io/ioutil"
 	"net"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/p4gefau1t/trojan-go/common"
-	"github.com/p4gefau1t/trojan-go/log"
 	"github.com/p4gefau1t/trojan-go/tunnel"
 )
 
@@ -47,7 +47,11 @@ func (c *PacketConn) WriteWithMetadata(payload []byte, metadata *tunnel.Metadata
 
 	_, err := c.Conn.Write(w.Bytes())
 
-	log.Debug("udp packet remote", c.RemoteAddr(), "metadata", metadata, "size", length)
+	log.Debug().
+		Stringer("addr", c.RemoteAddr()).
+		Stringer("metadata", metadata).
+		Int("size", length).
+		Msg("udp packet remote")
 	return len(payload), err
 }
 
@@ -70,7 +74,7 @@ func (c *PacketConn) ReadWithMetadata(payload []byte) (int, *tunnel.Metadata, er
 	}
 
 	if len(payload) < length || length > MaxPacketSize {
-		io.CopyN(ioutil.Discard, c.Conn, int64(length)) // drain the rest of the packet
+		io.CopyN(io.Discard, c.Conn, int64(length)) // drain the rest of the packet
 		return 0, nil, common.NewError("incoming packet size is too large")
 	}
 
@@ -78,7 +82,11 @@ func (c *PacketConn) ReadWithMetadata(payload []byte) (int, *tunnel.Metadata, er
 		return 0, nil, common.NewError("failed to read payload")
 	}
 
-	log.Debug("udp packet from", c.RemoteAddr(), "metadata", addr.String(), "size", length)
+	log.Debug().
+		Stringer("remote-addr", c.RemoteAddr()).
+		Stringer("metadata", addr).
+		Int("size", length).
+		Msg("udp packet from")
 	return length, &tunnel.Metadata{
 		Address: addr,
 	}, nil

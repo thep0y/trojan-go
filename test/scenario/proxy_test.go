@@ -16,7 +16,6 @@ import (
 	_ "github.com/p4gefau1t/trojan-go/api"
 	_ "github.com/p4gefau1t/trojan-go/api/service"
 	"github.com/p4gefau1t/trojan-go/common"
-	_ "github.com/p4gefau1t/trojan-go/log/golog"
 	"github.com/p4gefau1t/trojan-go/proxy"
 	_ "github.com/p4gefau1t/trojan-go/proxy/client"
 	_ "github.com/p4gefau1t/trojan-go/proxy/forward"
