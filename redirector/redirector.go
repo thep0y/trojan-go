@@ -5,6 +5,9 @@ import (
 	"io"
 	"net"
 	"reflect"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/rs/zerolog/log"
 )
@@ -65,30 +68,40 @@ func (r *Redirector) worker() {
 				}
 				defer outboundConn.Close()
 				errChan := make(chan error, 2)
-				copyConn := func(a, b net.Conn) {
-					_, err := io.Copy(a, b)
-					if err != nil && err != io.EOF {
-						log.Debug().
-							Err(err).
-							Str("from", b.RemoteAddr().String()).
-							Str("to", a.RemoteAddr().String()).
-							Msg("connection copy error")
+				var wg sync.WaitGroup
+				copyConn := func(dst, src net.Conn) {
+					defer wg.Done()
+					_, err := io.Copy(dst, src)
+					if err != nil {
+						if err != io.EOF && !strings.Contains(err.Error(), "connection reset by peer") {
+							log.Debug().
+								Err(err).
+								Str("from", src.RemoteAddr().String()).
+								Str("to", dst.RemoteAddr().String()).
+								Msg("connection copy error")
+						}
 					}
+					// 确保连接被正确关闭
+					dst.SetDeadline(time.Now())
+					src.SetDeadline(time.Now())
 					errChan <- err
 				}
+
+				wg.Add(2)
 				go copyConn(outboundConn, redirection.InboundConn)
 				go copyConn(redirection.InboundConn, outboundConn)
-				select {
-				case err := <-errChan:
-					if err != nil && err != io.EOF {
+
+				go func() {
+					wg.Wait()
+					close(errChan)
+				}()
+
+				for err := range errChan {
+					if err != nil && err != io.EOF && !strings.Contains(err.Error(), "connection reset by peer") {
 						log.Error().Err(err).Msg("failed to redirect")
-					} else {
-						log.Info().Msg("redirection done")
 					}
-				case <-r.ctx.Done():
-					log.Debug().Msg("exiting")
-					return
 				}
+				log.Info().Msg("redirection done")
 			}
 			go handle(redirection)
 		case <-r.ctx.Done():
