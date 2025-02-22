@@ -75,8 +75,9 @@ func (r *Redirector) worker() {
 				case err := <-errChan:
 					if err != nil {
 						log.Error().Err(err).Msg("failed to redirect")
+					} else {
+						log.Info().Msg("redirection done")
 					}
-					log.Info().Msg("redirection done")
 				case <-r.ctx.Done():
 					log.Debug().Msg("exiting")
 					return
