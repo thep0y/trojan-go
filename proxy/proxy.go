@@ -5,6 +5,7 @@ import (
 	"io"
 	"math/rand"
 	"net"
+	"os"
 	"strings"
 
 	"github.com/rs/zerolog"
@@ -194,12 +195,15 @@ func NewProxyFromConfigData(data []byte, isJSON bool) (*Proxy, error) {
 		return nil, common.NewError("unknown proxy type: " + cfg.RunType)
 	}
 	zerolog.SetGlobalLevel(zerolog.Level(cfg.LogLevel))
-	// if cfg.LogFile != "" {
-	// 	file, err := os.OpenFile(cfg.LogFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
-	// 	if err != nil {
-	// 		return nil, common.NewError("failed to open log file").Base(err)
-	// 	}
-	// log.SetOutput(file)
-	// }
+	log.Logger = zerolog.New(os.Stderr).With().Caller().Timestamp().Logger()
+
+	if cfg.LogFile != "" {
+		file, err := os.OpenFile(cfg.LogFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
+		if err != nil {
+			return nil, common.NewError("failed to open log file").Base(err)
+		}
+		multi := zerolog.MultiLevelWriter(os.Stderr, file)
+		log.Logger = zerolog.New(multi).With().Caller().Timestamp().Logger()
+	}
 	return create(ctx)
 }
