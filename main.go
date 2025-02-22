@@ -20,7 +20,15 @@ func init() {
 
 func main() {
 	log.Logger = log.With().Caller().Logger()
+
+	debug := flag.Bool("debug", false, "sets log level to debug")
+
 	flag.Parse()
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	if *debug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
+
 	for {
 		h, err := option.PopOptionHandler()
 		if err != nil {
