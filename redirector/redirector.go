@@ -67,13 +67,20 @@ func (r *Redirector) worker() {
 				errChan := make(chan error, 2)
 				copyConn := func(a, b net.Conn) {
 					_, err := io.Copy(a, b)
+					if err != nil && err != io.EOF {
+						log.Debug().
+							Err(err).
+							Str("from", b.RemoteAddr().String()).
+							Str("to", a.RemoteAddr().String()).
+							Msg("connection copy error")
+					}
 					errChan <- err
 				}
 				go copyConn(outboundConn, redirection.InboundConn)
 				go copyConn(redirection.InboundConn, outboundConn)
 				select {
 				case err := <-errChan:
-					if err != nil {
+					if err != nil && err != io.EOF {
 						log.Error().Err(err).Msg("failed to redirect")
 					} else {
 						log.Info().Msg("redirection done")
